@@ -1,0 +1,215 @@
+services:
+  parsing-scheduler-service:
+    container_name: parsing-scheduler-service
+    build: ./parsing-scheduler-service
+    depends_on:
+      - parsing-scheduler-kafka
+      - parsing-scheduler-redis
+    environment:
+      PROFILE: ${PROFILE}
+
+      KAFKA_HOST: ${PSS_KAFKA_HOST}
+      KAFKA_PORT: ${PSS_KAFKA_PORT}
+      KAFKA_NEWS_LINKS_TOPIC: ${PSS_KAFKA_NEWS_LINKS_TOPIC}
+
+      REDIS_HOST: ${PSS_REDIS_HOST}
+      REDIS_PORT: ${PSS_REDIS_PORT}
+
+      HTTP_PORT: ${PSS_HTTP_PORT}
+    networks:
+      - inner-network
+    ports:
+      - "${PSS_HTTP_PORT}:${PSS_HTTP_PORT}"
+
+  parsing-scheduler-redis:
+    container_name: parsing-scheduler-redis
+    image: redis:latest
+    restart: always
+    ports:
+      - "${PSS_REDIS_PORT}:${PSS_REDIS_PORT}"
+    volumes:
+      - pss-redis-data:/data
+    networks:
+      - inner-network
+    command: >
+      --appendonly yes
+      --save 60 1
+      --loglevel warning
+
+  parsing-scheduler-kafka:
+    container_name: parsing-scheduler-kafka
+    image: wurstmeister/kafka
+    depends_on:
+      - zookeeper
+    ports:
+      - "${PSS_KAFKA_PORT}:${PSS_KAFKA_PORT}"
+      - "${PSS_KAFKA_OUT_PORT}:${PSS_KAFKA_OUT_PORT}"
+    environment:
+      KAFKA_ADVERTISED_LISTENERS: INSIDE://parsing-scheduler-kafka:${PSS_KAFKA_PORT},OUTSIDE://localhost:${PSS_KAFKA_OUT_PORT}
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: INSIDE:PLAINTEXT,OUTSIDE:PLAINTEXT
+      KAFKA_LISTENERS: INSIDE://0.0.0.0:${PSS_KAFKA_PORT},OUTSIDE://0.0.0.0:${PSS_KAFKA_OUT_PORT}
+      KAFKA_INTER_BROKER_LISTENER_NAME: INSIDE
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:${ZOOKEEPER_PORT}
+    volumes:
+      - pss-kafka-data:/kafka
+    networks:
+      - inner-network
+#
+#  data-aggregator-kafka:
+#    image: wurstmeister/kafka
+#    depends_on:
+#      - zookeeper
+#    ports:
+#      - "${DAS_KAFKA_PORT}:${DAS_KAFKA_PORT}"
+#      - "${DAS_KAFKA_OUT_PORT}:${DAS_KAFKA_OUT_PORT}"
+#    environment:
+#      KAFKA_ADVERTISED_LISTENERS: INSIDE://data-aggregator-kafka:${DAS_KAFKA_PORT},OUTSIDE://localhost:${DAS_KAFKA_OUT_PORT}
+#      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: INSIDE:PLAINTEXT,OUTSIDE:PLAINTEXT
+#      KAFKA_LISTENERS: INSIDE://0.0.0.0:${DAS_KAFKA_PORT},OUTSIDE://0.0.0.0:${DAS_KAFKA_OUT_PORT}
+#      KAFKA_INTER_BROKER_LISTENER_NAME: INSIDE
+#      KAFKA_ZOOKEEPER_CONNECT: zookeeper:${ZOOKEEPER_PORT}
+#    volumes:
+#      - das-kafka-data:/kafka
+#    networks:
+#      - inner-network
+#
+#  subscription-service:
+#    build: ./subscription-service
+#    depends_on:
+#      - subscription-postgres
+#      - subscription-kafka
+#      - subscription-liquibase
+#    environment:
+#      PROFILE: ${PROFILE}
+#
+#      POSTGRES_HOST: ${SUB_POSTGRES_HOST}
+#      POSTGRES_PORT: ${SUB_POSTGRES_PORT}
+#      POSTGRES_USER: ${SUB_POSTGRES_USER}
+#      POSTGRES_PASSWORD: ${SUB_POSTGRES_PASSWORD}
+#      POSTGRES_DB: ${SUB_POSTGRES_DB}
+#
+#      KAFKA_HOST: ${SUB_KAFKA_HOST}
+#      KAFKA_PORT: ${SUB_KAFKA_PORT}
+#      KAFKA_CONSUMER_GROUP: ${SUB_KAFKA_GROUP}
+#      KAFKA_SUBSCRIPTION_TOPIC: ${SUB_KAFKA_SUBSCRIPTION_TOPIC}
+#
+#      TELEGRAM_TOKEN: ${SUB_TELEGRAM_TOKEN}
+#
+#      HTTP_PORT: ${SUB_HTTP_PORT}
+#      GRPC_PORT: ${SUB_GRPC_PORT}
+#    networks:
+#      - inner-network
+#    ports:
+#      - "${SUB_HTTP_PORT}:${SUB_HTTP_PORT}"
+#      - "${SUB_GRPC_PORT}:${SUB_GRPC_PORT}"
+#    profiles:
+#      - develop
+#      - production
+#
+#  subscription-postgres:
+#    image: postgres:latest
+#    environment:
+#      POSTGRES_USER: ${SUB_POSTGRES_USER}
+#      POSTGRES_PASSWORD: ${SUB_POSTGRES_PASSWORD}
+#      POSTGRES_DB: ${SUB_POSTGRES_DB}
+#    volumes:
+#      - sub-postgres-data:/var/lib/postgresql/data
+#    ports:
+#      - "${SUB_POSTGRES_PORT}:${PG_PORT}"
+#    networks:
+#      - inner-network
+#
+#  subscription-liquibase:
+#    image: liquibase/liquibase:4.25
+#    depends_on:
+#      - subscription-postgres
+#    command:
+#      - --changelog-file=master.xml
+#      - --driver=org.postgresql.Driver
+#      - --url=jdbc:postgresql://${SUB_POSTGRES_HOST}:${PG_PORT}/${SUB_POSTGRES_DB}
+#      - --username=${SUB_POSTGRES_USER}
+#      - --password=${SUB_POSTGRES_PASSWORD}
+#      - update
+#    volumes:
+#      - ./subscription-service/migrations:/liquibase/changelog
+#    networks:
+#      - inner-network
+#
+#  news-parser-service:
+#    build: ./news-parser-service
+#    depends_on:
+#      - news-preprocessor-kafka
+#    environment:
+#      PROFILE: ${PROFILE}
+#
+#      PSS_KAFKA_HOST: ${PSS_KAFKA_HOST}
+#      PSS_KAFKA_PORT: ${PSS_KAFKA_PORT}
+#      KAFKA_NEWS_LINKS_TOPIC: ${PSS_KAFKA_NEWS_LINKS_TOPIC}
+#
+#      NPS_KAFKA_HOST: ${NPS_KAFKA_HOST}
+#      NPS_KAFKA_PORT: ${NPS_KAFKA_PORT}
+#      KAFKA_RAW_NEWS_TOPIC: ${NPS_KAFKA_RAW_NEWS_TOPIC}
+#
+#      HTTP_PORT: ${NPS_HTTP_PORT}
+#    networks:
+#      - inner-network
+#    ports:
+#      - "${NPS_HTTP_PORT}:${NPS_HTTP_PORT}"
+#    profiles:
+#      - develop
+#      - production
+#
+#  news-processing-service:
+#    build: news-processing-service
+#    depends_on:
+#      - news-processor-kafka
+#    environment:
+#      - OPENAI_API_KEY
+#      - KAFKA_HOST
+#      - GIGACHAT_API_KEY
+#      - POSTGRES_HOST
+#      - POSTGRES_PORT
+#      - LLM_MODEL
+#      - MODEL
+#    ports:
+#      - 8000:8000
+#    networks:
+#      - inner-network
+#
+#  news-processor-kafka:
+#    image: wurstmeister/kafka
+#    depends_on:
+#      - zookeeper
+#    ports:
+#      - "${NPS_KAFKA_PORT}:${NPS_KAFKA_PORT}"
+#      - "${NPS_KAFKA_OUT_PORT}:${NPS_KAFKA_OUT_PORT}"
+#    environment:
+#      KAFKA_ADVERTISED_LISTENERS: INSIDE://news-preprocessor-kafka:${NPS_KAFKA_PORT},OUTSIDE://localhost:${NPS_KAFKA_OUT_PORT}
+#      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: INSIDE:PLAINTEXT,OUTSIDE:PLAINTEXT
+#      KAFKA_LISTENERS: INSIDE://0.0.0.0:${NPS_KAFKA_PORT},OUTSIDE://0.0.0.0:${NPS_KAFKA_OUT_PORT}
+#      KAFKA_INTER_BROKER_LISTENER_NAME: INSIDE
+#      KAFKA_ZOOKEEPER_CONNECT: zookeeper:${ZOOKEEPER_PORT}
+#    volumes:
+#      - nps-kafka-data:/kafka
+#    networks:
+#      - inner-network
+
+  zookeeper:
+    container_name: zookeeper
+    image: wurstmeister/zookeeper
+    ports:
+      - "${ZOOKEEPER_PORT}:${ZOOKEEPER_PORT}"
+    networks:
+      - inner-network
+
+volumes:
+  das-kafka-data:
+  sub-postgres-data:
+  pss-redis-data:
+  pss-kafka-data:
+  nps-kafka-data:
+  llm-service-model:
+
+networks:
+  inner-network:
+    driver: bridge

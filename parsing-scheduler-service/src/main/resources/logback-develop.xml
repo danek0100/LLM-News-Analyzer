@@ -1,0 +1,32 @@
+<configuration>
+
+    <!-- Определяем уровень логирования по умолчанию -->
+    <property name="LOG_LEVEL" value="INFO"/>
+
+    <!-- Консольный Appender -->
+    <appender name="STDOUT_PLAIN" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder>
+            <pattern>%d{HH:mm:ss.SSS} %-5level [%-30.30thread] %X %-25.25logger{20} -- %msg%n</pattern>
+        </encoder>
+    </appender>
+
+    <!-- Конфигурация логгеров для различных пакетов -->
+    <logger name="com.sun" level="WARN"/>
+    <logger name="com.zaxxer" level="WARN"/>
+    <logger name="org.apache" level="WARN"/>
+    <logger name="org.hibernate" level="WARN"/>
+    <logger name="org.postgresql" level="WARN"/>
+    <logger name="org.springframework" level="WARN"/>
+    <logger name="org.springframework.cache" level="WARN"/>
+    <logger name="org.springframework.security" level="DEBUG"/>
+    <logger name="org.springframework.web" level="DEBUG"/>
+    <logger name="sun.rmi" level="WARN"/>
+    <logger name="sun.rmi.transport" level="WARN"/>
+    <logger name="edu.java" level="TRACE"/>
+
+    <!-- Root логгер с указанием уровня логирования и использования консольного appender -->
+    <root level="${LOG_LEVEL}">
+        <appender-ref ref="STDOUT_PLAIN"/>
+    </root>
+
+</configuration>
