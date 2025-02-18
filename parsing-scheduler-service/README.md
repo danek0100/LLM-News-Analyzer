@@ -1,4 +1,3 @@
-
 # Link Parsing Scheduler Service
 
 This service is designed to manage and schedule links for parsing. It interacts with a Kafka messaging system for communication, Redis for caching, and uses a scheduling mechanism to handle periodic tasks. The service sends link data (URL and last checked timestamp) to Kafka topics for further processing and updates the status in Redis.

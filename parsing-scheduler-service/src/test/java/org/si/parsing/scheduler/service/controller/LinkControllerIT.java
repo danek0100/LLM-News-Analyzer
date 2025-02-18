@@ -1,6 +1,5 @@
 package org.si.parsing.scheduler.service.controller;
 
-import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.si.parsing.scheduler.service.IntegrationTest;
@@ -87,8 +86,8 @@ public class LinkControllerIT extends IntegrationTest {
             .consumeWith(response -> {
                 Link responseLink = response.getResponseBody();
                 assertEquals(link.url(), responseLink.url());
-                // Убедимся, что lastChecked обновился
-                assert responseLink.lastChecked().isAfter(link.lastChecked());
+                // Убедимся, что lastParsedTime обновился
+                assert responseLink.lastParsedTime().isAfter(link.lastParsedTime());
             });
     }
 

@@ -1,0 +1,32 @@
+<configuration>
+    <!-- Определяем переменные -->
+    <property name="LOGSTASH_HOST" value="${LOGSTASH_HOST:dev-logstash-1}"/>
+    <property name="LOGSTASH_PORT" value="${LOGSTASH_PORT:5044}"/>
+    <property name="LOG_LEVEL" value="${LOG_LEVEL:info}"/>
+    <property name="APP_NAME" value="${spring.application.name}"/>
+
+    <!-- Appender для Logstash -->
+    <appender name="LOGSTASH" class="net.logstash.logback.appender.LogstashTcpSocketAppender">
+        <destination>${LOGSTASH_HOST}:${LOGSTASH_PORT}</destination>
+        <encoder class="net.logstash.logback.encoder.LoggingEventCompositeJsonEncoder">
+            <providers>
+                <timestamp>
+                    <pattern>yyyy-MM-dd'T'HH:mm:ss.SSSZ</pattern>
+                </timestamp>
+                <loggerName/>
+                <threadName/>
+                <logLevel/>
+                <mdc>
+                    <applicationName>${APP_NAME}</applicationName>
+                </mdc>
+                <context/>
+                <stackTrace/>
+            </providers>
+        </encoder>
+    </appender>
+
+    <!-- Root логгер -->
+    <root level="${LOG_LEVEL}">
+        <appender-ref ref="LOGSTASH"/>
+    </root>
+</configuration>

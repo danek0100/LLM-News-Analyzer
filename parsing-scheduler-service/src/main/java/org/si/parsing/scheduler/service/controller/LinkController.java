@@ -66,7 +66,7 @@ public class LinkController {
     }
 
     /**
-     * Update the "lastChecked" timestamp of a link
+     * Update the "lastParsedTime" timestamp of a link
      * @param url The URL of the link to update
      * @return Mono of the updated Link
      */
@@ -74,9 +74,9 @@ public class LinkController {
     public Mono<Link> updateLastChecked(@RequestParam @NotBlank String url) {
         return linkService.updateLastChecked(url)
             .doOnSubscribe(subscription ->
-                LOGGER.info("Updating lastChecked for link with URL: {}", url))
+                LOGGER.info("Updating lastParsedTime for link with URL: {}", url))
             .onErrorResume(error ->
-                Mono.error(new RuntimeException("Error updating lastChecked: " + error.getMessage())));
+                Mono.error(new RuntimeException("Error updating lastParsedTime: " + error.getMessage())));
     }
 
     /**

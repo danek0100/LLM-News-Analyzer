@@ -1,0 +1,59 @@
+# Maven target directories
+target/
+!**/src/main/**/target/
+!**/src/test/**/target/
+
+# Maven-specific files
+.mvn/
+!.mvn/wrapper/maven-wrapper.jar
+dependency-reduced-pom.xml
+
+# Eclipse IDE
+.project
+.classpath
+.settings/
+.apt_generated
+.springBeans
+.sts4-cache
+
+# IntelliJ IDEA
+.idea/
+*.iml
+*.ipr
+*.iws
+out/
+
+# NetBeans
+/nbproject/private/
+/nbbuild/
+/dist/
+/nbdist/
+/.nb-gradle/
+
+# VS Code
+.vscode/
+
+# OS-specific files
+*.swp
+*~
+.DS_Store
+Thumbs.db
+.directory
+
+# Docker files
+.dockerignore
+docker-compose.override.yml
+.env
+.env.*
+
+# Build directories
+build/
+!**/src/main/**/build/
+!**/src/test/**/build/
+
+# Lombok
+lombok.config
+
+# Logs
+logs/
+*.log

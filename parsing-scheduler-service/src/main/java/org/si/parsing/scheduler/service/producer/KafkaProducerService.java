@@ -32,7 +32,7 @@ public class KafkaProducerService {
     private String topic;
 
     /**
-     * Sends a {@link Link} object to Kafka as a message with URL and lastChecked timestamp.
+     * Sends a {@link Link} object to Kafka as a message with URL and lastParsedTime timestamp.
      * <p>
      * The message is serialized into a JSON string and sent to the configured Kafka topic.
      * </p>
@@ -41,7 +41,8 @@ public class KafkaProducerService {
      * @return a {@link Mono} indicating the completion of the Kafka send operation
      */
     public Mono<Void> sendLinkToKafka(Link link) {
-        String message = String.format("{\"url\":\"%s\", \"lastChecked\":\"%s\"}", link.url(), link.lastChecked());
+        String message = String.format("{\"url\":\"%s\", \"last_parsed_time\":\"%s\"}",
+            link.url(), link.lastParsedTime());
 
         SenderRecord<String, String, String> senderRecord = SenderRecord.create(
             new ProducerRecord<>(topic, link.url(), message), link.url()

@@ -19,6 +19,7 @@
 
     <modules>
         <module>parsing-scheduler-service</module>
+        <module>news-parser-service</module>
     </modules>
 
     <profiles>

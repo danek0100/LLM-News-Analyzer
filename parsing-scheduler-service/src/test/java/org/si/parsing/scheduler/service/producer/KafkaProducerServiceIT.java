@@ -49,7 +49,7 @@ public class KafkaProducerServiceIT extends IntegrationTest {
         containerProps.setMessageListener((MessageListener<String, String>) record -> {
             // Проверяем, что сообщение получено
             assertThat(record.value()).contains("url");
-            assertThat(record.value()).contains("lastChecked");
+            assertThat(record.value()).contains("lastParsedTime");
         });
 
         // Создание и запуск контейнера сообщений

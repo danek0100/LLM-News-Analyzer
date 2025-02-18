@@ -54,6 +54,88 @@ services:
       - pss-kafka-data:/kafka
     networks:
       - inner-network
+
+  news-parser-service:
+    container_name: news-parser-service
+    build: ./news-parser-service
+    depends_on:
+      - parsing-scheduler-kafka
+      - news-processor-kafka
+    environment:
+      PROFILE: ${PROFILE}
+
+      PSS_KAFKA_HOST: ${PSS_KAFKA_HOST}
+      PSS_KAFKA_PORT: ${PSS_KAFKA_PORT}
+      PSS_KAFKA_NEWS_LINKS_TOPIC: ${PSS_KAFKA_NEWS_LINKS_TOPIC}
+
+      NPS_KAFKA_HOST: ${NPS_KAFKA_HOST}
+      NPS_KAFKA_PORT: ${NPS_KAFKA_PORT}
+      NPS_KAFKA_RAW_NEWS_TOPIC: ${NPS_KAFKA_RAW_NEWS_TOPIC}
+
+      HTTP_PORT: ${NParsing_HTTP_PORT}
+    networks:
+      - inner-network
+    ports:
+      - "${NParsing_HTTP_PORT}:${NParsing_HTTP_PORT}"
+
+  news-processor-kafka:
+    image: wurstmeister/kafka
+    container_name: news-processor-kafka
+    depends_on:
+      - zookeeper
+    ports:
+      - "${NPS_KAFKA_PORT}:${NPS_KAFKA_PORT}"
+      - "${NPS_KAFKA_OUT_PORT}:${NPS_KAFKA_OUT_PORT}"
+    environment:
+      KAFKA_ADVERTISED_LISTENERS: INSIDE://news-processor-kafka:${NPS_KAFKA_PORT},OUTSIDE://localhost:${NPS_KAFKA_OUT_PORT}
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: INSIDE:PLAINTEXT,OUTSIDE:PLAINTEXT
+      KAFKA_LISTENERS: INSIDE://0.0.0.0:${NPS_KAFKA_PORT},OUTSIDE://0.0.0.0:${NPS_KAFKA_OUT_PORT}
+      KAFKA_INTER_BROKER_LISTENER_NAME: INSIDE
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:${ZOOKEEPER_PORT}
+    volumes:
+      - nps-kafka-data:/kafka
+    networks:
+      - inner-network
+
+  dummy-parser-service:
+    container_name: dummy-parser-service
+    build: ./dummy-parser-service
+    depends_on:
+      - news-processor-kafka
+    environment:
+      KAFKA_HOST: ${NPS_KAFKA_HOST}
+      KAFKA_PORT: ${NPS_KAFKA_PORT}
+      KAFKA_TOPIC: ${NPS_KAFKA_RAW_NEWS_TOPIC}
+    networks:
+      - inner-network
+
+  news-processor-service:
+    container_name: news-processor-service
+    build: ./news-processor-service
+    depends_on:
+      - news-processor-kafka
+    environment:
+      GIGACHAT_API_KEY: ${GIGACHAT_API_KEY}
+      GIGACHAT_MODEL: ${GIGACHAT_MODEL}
+
+      HF_TOKEN: ${HF_TOKEN}
+      HF_PARAPHRASE_MODEL: ${HF_PARAPHRASE_MODEL}
+
+      T_API_TOKEN: ${T_API_TOKEN}
+
+      NPS_KAFKA_HOST: ${NPS_KAFKA_HOST}
+      NPS_KAFKA_PORT: ${NPS_KAFKA_PORT}
+      NPS_KAFKA_RAW_NEWS_TOPIC: ${NPS_KAFKA_RAW_NEWS_TOPIC}
+      NPS_KAFKA_GROUP: ${NPS_KAFKA_GROUP}
+
+      DAS_KAFKA_HOST: ${DAS_KAFKA_HOST}
+      DAS_KAFKA_PORT: ${DAS_KAFKA_PORT}
+      DAS_NEWS_TOPIC: ${DAS_KAFKA_NEWS_TOPIC}
+
+    ports:
+      - "${NPS_HTTP_PORT}:${NPS_HTTP_PORT}"
+    networks:
+      - inner-network
 #
 #  data-aggregator-kafka:
 #    image: wurstmeister/kafka
@@ -134,65 +216,6 @@ services:
 #      - ./subscription-service/migrations:/liquibase/changelog
 #    networks:
 #      - inner-network
-#
-#  news-parser-service:
-#    build: ./news-parser-service
-#    depends_on:
-#      - news-preprocessor-kafka
-#    environment:
-#      PROFILE: ${PROFILE}
-#
-#      PSS_KAFKA_HOST: ${PSS_KAFKA_HOST}
-#      PSS_KAFKA_PORT: ${PSS_KAFKA_PORT}
-#      KAFKA_NEWS_LINKS_TOPIC: ${PSS_KAFKA_NEWS_LINKS_TOPIC}
-#
-#      NPS_KAFKA_HOST: ${NPS_KAFKA_HOST}
-#      NPS_KAFKA_PORT: ${NPS_KAFKA_PORT}
-#      KAFKA_RAW_NEWS_TOPIC: ${NPS_KAFKA_RAW_NEWS_TOPIC}
-#
-#      HTTP_PORT: ${NPS_HTTP_PORT}
-#    networks:
-#      - inner-network
-#    ports:
-#      - "${NPS_HTTP_PORT}:${NPS_HTTP_PORT}"
-#    profiles:
-#      - develop
-#      - production
-#
-#  news-processing-service:
-#    build: news-processing-service
-#    depends_on:
-#      - news-processor-kafka
-#    environment:
-#      - OPENAI_API_KEY
-#      - KAFKA_HOST
-#      - GIGACHAT_API_KEY
-#      - POSTGRES_HOST
-#      - POSTGRES_PORT
-#      - LLM_MODEL
-#      - MODEL
-#    ports:
-#      - 8000:8000
-#    networks:
-#      - inner-network
-#
-#  news-processor-kafka:
-#    image: wurstmeister/kafka
-#    depends_on:
-#      - zookeeper
-#    ports:
-#      - "${NPS_KAFKA_PORT}:${NPS_KAFKA_PORT}"
-#      - "${NPS_KAFKA_OUT_PORT}:${NPS_KAFKA_OUT_PORT}"
-#    environment:
-#      KAFKA_ADVERTISED_LISTENERS: INSIDE://news-preprocessor-kafka:${NPS_KAFKA_PORT},OUTSIDE://localhost:${NPS_KAFKA_OUT_PORT}
-#      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: INSIDE:PLAINTEXT,OUTSIDE:PLAINTEXT
-#      KAFKA_LISTENERS: INSIDE://0.0.0.0:${NPS_KAFKA_PORT},OUTSIDE://0.0.0.0:${NPS_KAFKA_OUT_PORT}
-#      KAFKA_INTER_BROKER_LISTENER_NAME: INSIDE
-#      KAFKA_ZOOKEEPER_CONNECT: zookeeper:${ZOOKEEPER_PORT}
-#    volumes:
-#      - nps-kafka-data:/kafka
-#    networks:
-#      - inner-network
 
   zookeeper:
     container_name: zookeeper
@@ -202,13 +225,29 @@ services:
     networks:
       - inner-network
 
+#  kafdrop:
+#    image: obsidiandynamics/kafdrop:latest
+#    container_name: kafdrop
+#    environment:
+#      KAFKA_ADVERTISED_LISTENERS: INSIDE://parsing-scheduler-kafka:${PSS_KAFKA_PORT},OUTSIDE://localhost:${PSS_KAFKA_OUT_PORT}
+#      KAFKA_LISTENERS: INSIDE://0.0.0.0:${PSS_KAFKA_PORT},OUTSIDE://0.0.0.0:${PSS_KAFKA_OUT_PORT}
+#      KAFKA_ZOOKEEPER_CONNECT: zookeeper:${ZOOKEEPER_PORT}
+#      KAFKA_BOOTSTRAP_SERVERS: parsing-scheduler-kafka:${PSS_KAFKA_PORT}
+#    ports:
+#      - "9000:9000"
+#    networks:
+#      - inner-network
+#    depends_on:
+#      - parsing-scheduler-kafka
+
 volumes:
-  das-kafka-data:
-  sub-postgres-data:
   pss-redis-data:
   pss-kafka-data:
   nps-kafka-data:
+
   llm-service-model:
+  das-kafka-data:
+  sub-postgres-data:
 
 networks:
   inner-network:

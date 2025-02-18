@@ -19,7 +19,7 @@ public class SchedulerService {
 
     /**
      * Scheduled method that processes links every minute.
-     * It sends the links to Kafka and updates their "lastChecked" timestamp in Redis.
+     * It sends the links to Kafka and updates their "lastParsedTime" timestamp in Redis.
      * This method is fully asynchronous, with non-blocking operations for Kafka and Redis interactions.
      */
     @Scheduled(fixedRate = 60000)

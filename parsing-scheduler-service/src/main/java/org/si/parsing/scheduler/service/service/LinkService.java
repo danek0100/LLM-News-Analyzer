@@ -42,7 +42,7 @@ public class LinkService {
     }
 
     /**
-     * Updates the "lastChecked" timestamp of an existing link.
+     * Updates the "lastParsedTime" timestamp of an existing link.
      *
      * @param url The URL of the link to update.
      * @return A {@link Mono} containing the updated {@link Link}.
